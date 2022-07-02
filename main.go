@@ -6,6 +6,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type user struct {
+	ID                       string     `json:"id"`
+	Name                     string     `json:"name"`
+	Email                    string     `json:"email"`
+	Quiz                     []question `json:"questions"`
+	Number_corrected_answers int        `json:"number_corrected_answers"`
+	User_rated               float64    `json:"user_rated"`
+}
+
 // question represents data about a question and its answer
 type question struct {
 	ID             string   `json:"id"`
@@ -14,6 +23,11 @@ type question struct {
 	Correct_answer string   `json:"correct_answer"`
 	Answered       bool     `json:"answered"`
 	Is_corrected   bool     `json:"is_corrected"`
+}
+
+var users = []user{
+	{ID: "1", Name: "John Doe", Email: "doe.jonh@hotmail.com", Quiz: questions, Number_corrected_answers: 0, User_rated: 0.00},
+	{ID: "2", Name: "Jane Doe", Email: "janedoe1989@gmail.com", Quiz: questions, Number_corrected_answers: 0, User_rated: 0.00},
 }
 
 var questions = []question{
@@ -29,8 +43,25 @@ func getQuestions(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, questions)
 }
 
+//Post method to register a new user
+func registerUser(c *gin.Context) {
+	var newUser user
+
+	//Call a BindJson to bind  the received JSON to new user
+	if err := c.BindJSON(&newUser); err != nil {
+		return
+	}
+
+	// TODO: Do not forget to validate the email uniquiness
+
+	//add a new user to the users slice.
+	users = append(users, newUser)
+	c.IndentedJSON(http.StatusCreated, newUser)
+}
+
 func main() {
 	router := gin.Default()
 	router.GET("/questions", getQuestions)
+	router.POST("/user", registerUser)
 	router.Run("localhost:8080")
 }
