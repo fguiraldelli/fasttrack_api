@@ -79,7 +79,7 @@ func registerUser(c *gin.Context) {
 	newUser.Number_corrected_answers = 0
 	newUser.User_rated = 0.00
 	users = append(users, newUser)
-	c.IndentedJSON(http.StatusCreated, newUser)
+	c.IndentedJSON(http.StatusCreated, "user created sucessfully")
 }
 
 func main() {
