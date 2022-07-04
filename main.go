@@ -1,12 +1,15 @@
 package main
 
 import (
+	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
-type user struct {
+// user represents data about the users and theirs respective answers
+type registred_user struct {
 	ID                       string     `json:"id"`
 	Name                     string     `json:"name"`
 	Email                    string     `json:"email"`
@@ -25,7 +28,7 @@ type question struct {
 	Is_corrected   bool     `json:"is_corrected"`
 }
 
-var users = []user{
+var users = []registred_user{
 	{ID: "1", Name: "John Doe", Email: "doe.jonh@hotmail.com", Quiz: questions, Number_corrected_answers: 0, User_rated: 0.00},
 	{ID: "2", Name: "Jane Doe", Email: "janedoe1989@gmail.com", Quiz: questions, Number_corrected_answers: 0, User_rated: 0.00},
 }
@@ -38,23 +41,43 @@ var questions = []question{
 	{ID: "5", Question: "Question 5", Answers: []string{"E1", "E2", "E3", "E4", "E5"}, Correct_answer: "E3", Answered: false, Is_corrected: false},
 }
 
+func verifyEmail(new_email string, existed_email string) error {
+	if new_email == existed_email {
+		return errors.New("this e-mail already exists")
+	}
+	return nil
+}
+
 //getQuestions responds with the list of all questions as JSON.
 func getQuestions(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, questions)
 }
 
+//getUsers list of all users as JSON.
+func getUsers(c *gin.Context) {
+	c.IndentedJSON(http.StatusOK, users)
+}
+
 //Post method to register a new user
 func registerUser(c *gin.Context) {
-	var newUser user
+	var newUser registred_user
 
 	//Call a BindJson to bind  the received JSON to new user
 	if err := c.BindJSON(&newUser); err != nil {
 		return
 	}
 
-	// TODO: Do not forget to validate the email uniquiness
-
 	//add a new user to the users slice.
+	for _, existed_user := range users {
+		if err := verifyEmail(existed_user.Email, newUser.Email); err != nil {
+			c.IndentedJSON(http.StatusConflict, gin.H{"message": err.Error()})
+			return
+		}
+	}
+	newUser.ID = strconv.Itoa(len(users) + 1)
+	newUser.Quiz = questions
+	newUser.Number_corrected_answers = 0
+	newUser.User_rated = 0.00
 	users = append(users, newUser)
 	c.IndentedJSON(http.StatusCreated, newUser)
 }
@@ -62,6 +85,7 @@ func registerUser(c *gin.Context) {
 func main() {
 	router := gin.Default()
 	router.GET("/questions", getQuestions)
+	router.GET("/users", getUsers)
 	router.POST("/user", registerUser)
 	router.Run("localhost:8080")
 }
